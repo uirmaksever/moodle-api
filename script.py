@@ -16,7 +16,7 @@ import json
 import markdown
 from time import sleep
 import os
-
+import pytz
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,6 +25,7 @@ CWD = os.getenv("CWD")
 MOODLE_TOKEN = os.getenv("MOODLE_TOKEN")
 EXPORT_SHEET_TOKEN = os.getenv("EXPORT_SHEET_TOKEN")
 GOOGLE_AUTH_FILENAME = os.getenv("GOOGLE_AUTH_FILENAME")
+GOOGLE_CHAT_WEBHOOK = os.getenv("GOOGLE_CHAT_WEBHOOK")
 
 url = 'https://egitim.stgm.org.tr/webservice/rest/server.php'
 moodle = Moodle(url, MOODLE_TOKEN)
@@ -101,7 +102,7 @@ def process_enrolled_users_of_course(courseid: int, sheet_name: str):
     enrolled_users_pd = pd.DataFrame(enrolled_users)
     enrolled_users_pd.drop(columns=["customfields", "department", "description", "descriptionformat", "country", "profileimageurlsmall", "profileimageurl", "groups", "enrolledcourses"],
                         inplace=True)
-    enrolled_users_pd = pd.merge(enrolled_users_pd, custom_fields_pd[["id", "email", "organization"]], how="left", left_on="id", right_on="id")
+    # enrolled_users_pd = pd.merge(enrolled_users_pd, custom_fields_pd[["id", "email", "organization"]], how="left", left_on="id", right_on="id")
     enrolled_users_pd["roles"] = enrolled_users_pd["roles"].apply(lambda x: x[0]["shortname"])
     enrolled_users_pd["firstaccess"] = enrolled_users_pd["firstaccess"].apply(get_date_from_timestamp)
     enrolled_users_pd["lastaccess"] = enrolled_users_pd["lastaccess"].apply(get_date_from_timestamp)
@@ -128,13 +129,51 @@ def process_enrolled_users_of_course(courseid: int, sheet_name: str):
     workbook.df_to_sheet(enrolled_users_pd, index=False, sheet=sheet_name, start="A2", replace=True)
     return enrolled_users_pd
 
+def mark_completed_time():
+    completed_time = datetime.datetime.now(pytz.timezone("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M:%S")
+    gc.open_by_key(EXPORT_SHEET_TOKEN).worksheet("META").update("B1", completed_time)
+    return completed_time
+
+def send_message_to_google_chat(message):
+    message = requests.post(
+        url=GOOGLE_CHAT_WEBHOOK,
+        # headers=webhook_headers,
+        data=json.dumps({"text": message})
+    )
+    return message
+
+def get_total_users(custom_fields_pd):
+    return custom_fields_pd.shape[0]
+
+def get_total_completed_users(enrolled_users_pd):
+    return enrolled_users_pd["Katılım Belgesi"].sum()
+
+def prepare_message(completed_time: str, custom_fields_pd: pd.DataFrame, enrolled_users_pd_32, enrolled_users_pd_33, enrolled_users_pd_34):
+    message_text = f"""
+        Moodle kullanıcı bilgileri güncellendi ({completed_time}).
+        Toplam kullanıcı: {get_total_users(custom_fields_pd)}
+
+        Herkese Lazım Dersler
+        Kayıtlı kişi: {get_total_users(enrolled_users_pd_32)}
+        Tamamlayan: {get_total_completed_users(enrolled_users_pd_32)}
+
+        Herkes Plan Sever
+        Kayıtlı kişi: {get_total_users(enrolled_users_pd_33)}
+        Tamamlayan: {get_total_completed_users(enrolled_users_pd_33)}
+
+        Herkes Dijital Sever
+        Kayıtlı kişi: {get_total_users(enrolled_users_pd_34)}
+        Tamamlayan: {get_total_completed_users(enrolled_users_pd_34)}
+    """
+    return message_text
 
 if __name__ == "__main__":
     custom_fields_pd = get_all_users()
     print("Exported all users")
-    enrolled_users_pd = process_enrolled_users_of_course(32, "Herkese Lazım Dersler")
+    enrolled_users_pd_32 = process_enrolled_users_of_course(32, "Herkese Lazım Dersler")
     print("Exported Herkese Lazım Dersler")
-    enrolled_users_pd = process_enrolled_users_of_course(33, "Herkes Plan Sever")
+    enrolled_users_pd_33 = process_enrolled_users_of_course(33, "Herkes Plan Sever")
     print("Exported Herkes Plan Sever")
-    enrolled_users_pd = process_enrolled_users_of_course(34, "Herkes Dijital Sever")
+    enrolled_users_pd_34 = process_enrolled_users_of_course(34, "Herkes Dijital Sever")
     print("Exported Herkes Dijital Sever")
+
