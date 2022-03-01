@@ -145,8 +145,8 @@ def send_message_to_google_chat(message):
 def get_total_users(custom_fields_pd):
     return custom_fields_pd.shape[0]
 
-def get_total_completed_users(enrolled_users_pd):
-    return enrolled_users_pd["Katılım Belgesi"].sum()
+def get_total_completed_users(enrolled_users_pd, col_name: str):
+    return enrolled_users_pd[col_name].sum()
 
 def prepare_message(completed_time: str, custom_fields_pd: pd.DataFrame, enrolled_users_pd_32, enrolled_users_pd_33, enrolled_users_pd_34):
     message_text = f"""
@@ -155,15 +155,29 @@ def prepare_message(completed_time: str, custom_fields_pd: pd.DataFrame, enrolle
 
         Herkese Lazım Dersler
         Kayıtlı kişi: {get_total_users(enrolled_users_pd_32)}
-        Tamamlayan: {get_total_completed_users(enrolled_users_pd_32)}
+        Tamamlayan: {get_total_completed_users(enrolled_users_pd_32, "Katılım Belgesi")}
+        Sivil Topluma Genel Bir Bakış: {get_total_completed_users(enrolled_users_pd_32, "Sivil Topluma Genel Bir Bakış")}
+        STÖ’ler için Örgüt Tasarımı ve Yönetimi: {get_total_completed_users(enrolled_users_pd_32, "STÖ’ler için Örgüt Tasarımı ve Yönetimi")}
+        Hak Temelli Yaklaşım ve Anaakımlaştırma: {get_total_completed_users(enrolled_users_pd_32, "Hak Temelli Yaklaşım ve Anaakımlaştırma")}
+        İletişim Temelli Katılım ve Savunuculuk: {get_total_completed_users(enrolled_users_pd_32, "İletişim Temelli Katılım ve Savunuculuk")}
 
         Herkes Plan Sever
         Kayıtlı kişi: {get_total_users(enrolled_users_pd_33)}
-        Tamamlayan: {get_total_completed_users(enrolled_users_pd_33)}
+        Tamamlayan: {get_total_completed_users(enrolled_users_pd_33, "Katılım Belgesi")}
+        Temel Analizler: {get_total_completed_users(enrolled_users_pd_33, "Temel Analizler")}
+        Analize Dayalı Planlama: {get_total_completed_users(enrolled_users_pd_33, "Analize Dayalı Planlama")}
+        Proje Döngüsü Yönetimi: {get_total_completed_users(enrolled_users_pd_33, "Proje Döngüsü Yönetimi")}
+        İzleme ve Değerlendirme: {get_total_completed_users(enrolled_users_pd_33, "İzleme ve Değerlendirme")}
 
         Herkes Dijital Sever
         Kayıtlı kişi: {get_total_users(enrolled_users_pd_34)}
-        Tamamlayan: {get_total_completed_users(enrolled_users_pd_34)}
+        Tamamlayan: {get_total_completed_users(enrolled_users_pd_34, "Katılım Belgesi")}
+        Dijital Okuryazarlık ve Dijital Dönüşüm: {get_total_completed_users(enrolled_users_pd_34, "Dijital Okuryazarlık ve Dijital Dönüşüm")}
+        Dijital İletişim ve Yönetişim: {get_total_completed_users(enrolled_users_pd_34, "Dijital İletişim ve Yönetişim")}
+        Dijital İçerik ve Sosyal Medya: {get_total_completed_users(enrolled_users_pd_34, "Dijital İçerik ve Sosyal Medya")}
+        Veri Görselleştirme ve Savunuculuk: {get_total_completed_users(enrolled_users_pd_34, "Veri Görselleştirme ve Savunuculuk")}
+
+        Detaylı bilgi için <https://datastudio.google.com/s/lgSNJLZ36y0|rapora gidin>.
     """
     return message_text
 

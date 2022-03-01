@@ -6,6 +6,7 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.triggers.cron import CronTrigger
 import logging
 import time
+import sys
 
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
@@ -29,7 +30,7 @@ cron_trigger = CronTrigger(
 
 scheduler = BackgroundScheduler(jobstores=jobstores, job_defaults=job_defaults)
 
-@scheduler.scheduled_job(id="run_backup",trigger="cron", year="*", month="*", day="*", hour="*", minute="*/15", second="0")
+@scheduler.scheduled_job(id="run_backup",trigger="cron", year="*", month="*", day="*", hour="8", minute="0", second="0")
 def run_backup():
     custom_fields_pd = script.get_all_users()
     logging.info("Exported all users")
@@ -50,10 +51,12 @@ def run_backup():
 #     logging.info("Deneme")
 
 if __name__ == '__main__':
+    if "--now" in sys.argv:
+        print("Task running now.")
+        run_backup()
+
     logging.info("Scheduler starting")
     scheduler.start()
+    scheduler.print_jobs()
     while True:
-        print("#"*24 +"\n", "JOBS:")
-        scheduler.print_jobs()
-        print("#"*24 +"\n")
-        time.sleep(5)
+        pass
